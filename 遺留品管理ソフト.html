@@ -1,0 +1,1966 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>遺留品管理システム</title>
+    <style>
+        :root {
+            --win-bg: #ece9d8;
+            --win-border-light: #ffffff;
+            --win-border-dark: #808080;
+            --win-border-darker: #404040;
+            --btn-bg: #ece9d8;
+        }
+
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #808080;
+            font-family: "MS PGothic", "MS Gothic", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .window {
+            background-color: var(--win-bg);
+            border: 2px solid;
+            border-color: var(--win-border-light) var(--win-border-darker) var(--win-border-darker) var(--win-border-light);
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            max-width: 100%;
+            max-height: 100%;
+            display: none;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .window.active {
+            display: flex;
+        }
+
+        .title-bar {
+            background: linear-gradient(90deg, #0054e3, #2683ff);
+            color: white;
+            padding: 6px 10px;
+            font-weight: bold;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .title-bar-close {
+            background: #ece9d8;
+            color: black;
+            border: 1px solid;
+            border-color: var(--win-border-light) var(--win-border-darker) var(--win-border-darker) var(--win-border-light);
+            width: 22px;
+            height: 22px;
+            font-size: 13px;
+            line-height: 18px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .window-body {
+            padding: 15px;
+            flex-grow: 1;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        input[type="text"], textarea, input[type="number"], input[type="file"] {
+            background-color: #ffffff;
+            border: 2px solid;
+            border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+            padding: 4px 6px;
+            font-family: inherit;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        button, .win-btn {
+            background-color: var(--btn-bg);
+            border: 2px solid;
+            border-color: var(--win-border-light) var(--win-border-darker) var(--win-border-darker) var(--win-border-light);
+            padding: 6px 14px;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        button:active, .win-btn:active {
+            border-color: var(--win-border-darker) var(--win-border-light) var(--win-border-light) var(--win-border-darker);
+        }
+
+        /* 選択状態のボタン用スタイル */
+        button.selected-btn {
+            background-color: #0054e3 !important;
+            color: white !important;
+            border-color: var(--win-border-darker) var(--win-border-light) var(--win-border-light) var(--win-border-darker);
+        }
+
+        .form-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .color-preview-box {
+            width: 50px;
+            height: 22px;
+            border: 2px solid;
+            border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+            display: inline-block;
+            vertical-align: middle;
+        }
+        
+        .money-row {
+            display: grid;
+            grid-template-columns: 110px 65px 28px 28px 28px 85px;
+            align-items: center;
+            margin-bottom: 4px;
+            font-size: 13px;
+            gap: 4px;
+        }
+        .money-row input {
+            text-align: right;
+        }
+        .money-row button {
+            padding: 2px 0;
+            font-size: 12px;
+            min-width: 0;
+        }
+        .money-row span {
+            text-align: right;
+        }
+
+        .grid-buttons-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .grid-buttons-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .grid-buttons-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+
+        #custom-alert-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.4);
+            z-index: 4000;
+            justify-content: center;
+            align-items: center;
+        }
+        .custom-alert-content {
+            background: #ece9d8;
+            border: 2px solid;
+            border-color: var(--win-border-light) var(--win-border-darker) var(--win-border-darker) var(--win-border-light);
+            width: 320px;
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #barcode-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #reader {
+            width: 100%;
+            max-width: 400px;
+            background: black;
+            border: 2px solid white;
+        }
+
+        #camera-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        #camera-video {
+            width: 100%;
+            max-width: 450px;
+            max-height: 60vh;
+            background: black;
+            border: 2px solid white;
+            object-fit: cover;
+        }
+
+        #fullscreen-photo-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.92);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            cursor: zoom-out;
+        }
+        #fullscreen-photo-overlay img {
+            max-width: 95vw;
+            max-height: 95vh;
+            border: 3px solid white;
+            box-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+
+        #delete-reason-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.5);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+        }
+        .delete-modal-content {
+            background: #ece9d8;
+            border: 2px solid;
+            border-color: var(--win-border-light) var(--win-border-darker) var(--win-border-darker) var(--win-border-light);
+            padding: 20px;
+            width: 350px;
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.5);
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+
+    <div id="custom-alert-modal">
+        <div class="custom-alert-content">
+            <div class="title-bar" style="cursor: default;">
+                <span>情報</span>
+            </div>
+            <div style="padding: 20px; font-size: 14px; display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 24px;">[!]</span>
+                <span id="custom-alert-message" style="word-break: break-all;">取扱者を入力してください</span>
+            </div>
+            <div style="padding: 0 15px 15px 15px; display: flex; justify-content: center;">
+                <button type="button" style="width: 90px; font-weight: bold;" onclick="closeCustomAlert()">確認</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="fullscreen-photo-overlay" onclick="closeFullscreenPhoto()">
+        <img id="fullscreen-img" src="" alt="全画面写真">
+    </div>
+
+    <div id="barcode-modal">
+        <div style="font-size: 15px; margin-bottom: 10px; font-weight: bold; text-align: center;">職員証のバーコード・QRを枠内に写してください</div>
+        <div id="reader"></div>
+        <div style="margin-top: 15px;">
+            <button type="button" onclick="closeBarcodeScanner()" style="padding: 8px 20px; font-weight: bold; color: black;">キャンセル</button>
+        </div>
+    </div>
+
+    <div id="camera-modal">
+        <div style="font-size: 15px; margin-bottom: 10px; font-weight: bold; text-align: center;">遺留品をフレーム内に合わせてください</div>
+        <video id="camera-video" autoplay playsinline></video>
+        <canvas id="camera-canvas" style="display:none;"></canvas>
+        <div style="margin-top: 20px; display: flex; gap: 15px;">
+            <button type="button" onclick="capturePhoto()" style="padding: 10px 25px; font-weight: bold; background: #4CAF50; color: white;">撮影する</button>
+            <button type="button" onclick="closeCameraModal()" style="padding: 10px 20px; font-weight: bold; color: black;">キャンセル</button>
+        </div>
+    </div>
+
+    <div id="delete-reason-modal">
+        <div class="delete-modal-content">
+            <div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">削除確認</div>
+            <div style="margin-bottom: 10px; font-size: 13px;">削除理由を選択してください：</div>
+            <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 15px; font-size: 13px;">
+                <label><input type="radio" name="del-reason" value="廃棄処分" checked onclick="toggleOtherReasonInput(false)"> 廃棄処分</label>
+                <label><input type="radio" name="del-reason" value="誤登録" onclick="toggleOtherReasonInput(false)"> 誤登録</label>
+                <label><input type="radio" name="del-reason" value="その他" onclick="toggleOtherReasonInput(true)"> その他</label>
+                <div id="del-other-container" style="display: none; margin-top: 5px;">
+                    <input type="text" id="del-other-text" placeholder="理由を入力してください" style="width: 100%;">
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" onclick="closeDeleteReasonModal()">キャンセル</button>
+                <button type="button" style="background: #ffcdd2; font-weight: bold;" onclick="confirmExecuteDelete()">削除実行</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. メインメニュー -->
+    <div id="screen-menu" class="window active">
+        <div class="title-bar">
+            <span>遺留品管理システム - メインメニュー</span>
+        </div>
+        <div class="window-body" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;">
+            <div id="menu-warning-banner" style="display: none; background-color: #ffcccc; color: #cc0000; border: 1px solid #cc0000; padding: 10px 15px; margin-bottom: 20px; font-weight: bold; font-size: 14px; text-align: center; width: 100%; max-width: 400px; box-sizing: border-box;">
+                警告: 出力先フォルダが未指定です。「設定」からフォルダを選択してください。
+            </div>
+
+            <div style="display: flex; align-items: center; margin-bottom: 30px; gap: 10px;">
+                <span style="font-weight: bold; font-size: 16px;">登録地点：</span>
+                <input type="text" id="main-current-location" value="" readonly placeholder="登録地点を設定してください。" style="width: 220px; font-weight: bold; font-size: 14px; text-align: center;">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 300px;">
+                <button type="button" style="padding: 14px; font-size: 18px;" onclick="openRegisterScreen()">登 録</button>
+                <button type="button" style="padding: 14px; font-size: 18px; background-color: #dcdcdc;" disabled>一覧表示</button>
+                <button type="button" style="padding: 14px; font-size: 18px;" onclick="switchScreen('screen-search')">検 索</button>
+                <button type="button" style="padding: 14px; font-size: 18px;" onclick="switchScreen('screen-setting')">設 定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 遺留品登録画面 -->
+    <div id="screen-register" class="window">
+        <div class="title-bar">
+            <span id="reg-window-title">遺留品登録</span>
+            <div class="title-bar-close" onclick="closeRegisterScreen()">×</div>
+        </div>
+        <div class="window-body">
+            <div class="form-row" style="justify-content: space-between;">
+                <div>
+                    <input type="text" id="reg-year" style="width: 55px; text-align: center;"> 年
+                    <input type="text" id="reg-month" style="width: 35px; text-align: center;"> 月
+                    <input type="text" id="reg-day" style="width: 35px; text-align: center;"> 日
+                    <input type="text" id="reg-hour" style="width: 35px; text-align: center;"> 時
+                    <input type="text" id="reg-minute" style="width: 35px; text-align: center;"> 分
+                </div>
+                <div style="display: flex; gap: 5px; align-items: center;">
+                    <span style="font-size: 12px; font-weight: bold;">登録場所:</span>
+                    <input type="text" id="reg-location-header" value="" style="width: 120px; text-align: center;" readonly>
+                    <input type="text" id="reg-serial-no" value="1" style="width: 45px; text-align: center;" readonly>
+                </div>
+            </div>
+
+            <div id="edit-location-warning" style="display: none; background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 8px 12px; margin-bottom: 12px; font-size: 13px; font-weight: bold; text-align: center;">
+                登録地点（<span id="warning-current-loc"></span>）と登録場所（<span id="warning-reg-loc"></span>）が異なるため、編集・削除・返却手続きを行うことはできません。（閲覧のみ可能です）
+            </div>
+
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 280px;">
+                    <div class="form-row">
+                        <label style="width: 70px;">品名</label>
+                        <input type="text" id="reg-itemname" style="flex: 1; min-width: 120px;" onchange="checkItemDetailRequirement()">
+                        <button type="button" class="editable-field" onclick="openSelectFromReg('screen-item-select')">選択</button>
+                    </div>
+
+                    <div class="form-row">
+                        <label style="width: 70px;">色</label>
+                        <button type="button" class="editable-field" onclick="openSelectFromReg('screen-color-select')">選択</button>
+                        <div id="reg-color-box" class="color-preview-box" style="background-color: transparent;"></div>
+                        <span id="reg-color-text" style="font-size: 14px; margin-left: 5px;">無選択</span>
+                    </div>
+
+                    <div class="form-row" style="align-items: flex-start;">
+                        <label style="width: 70px; padding-top: 4px;">特徴</label>
+                        <textarea id="reg-feature" rows="3" style="flex: 1; resize: none;"></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <label style="width: 70px;">発見場所</label>
+                        <input type="text" id="reg-found-location" style="flex: 1; min-width: 120px;" onchange="checkFoundLocationChange(this.value)">
+                        <button type="button" class="editable-field" onclick="openSelectFromReg('screen-sub-location-select')">選択</button>
+                    </div>
+                </div>
+
+                <div style="width: 160px; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                    <div style="width: 150px; height: 120px; border: 2px solid #808080; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer;" title="クリックで拡大" onclick="openFullscreenPhotoFromReg()">
+                        <img id="photo-preview" src="" alt="写真なし" style="max-width: 100%; max-height: 100%; display: none;">
+                        <span id="photo-placeholder" style="font-size: 11px; color: #808080;">写真プレビュー</span>
+                    </div>
+                    
+                    <input type="file" id="file-input" accept="image/*" style="display: none;" onchange="handleImageFile(event)">
+
+                    <button type="button" class="editable-field" style="width: 100%; font-size: 12px; background: #d4edda;" onclick="startCameraModal()">撮影する</button>
+                    <button type="button" class="editable-field" style="width: 100%; font-size: 12px;" onclick="document.getElementById('file-input').click()">ファイル参照</button>
+                    <button type="button" id="btn-delete-photo" class="editable-field" style="width: 100%; font-size: 12px; display: none; color: red;" onclick="deletePhoto()">写真を削除</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 5px; flex-wrap: wrap;">
+                    <label style="width: 70px;">発・系統</label>
+                    <input type="text" id="reg-direction" style="width: 200px;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+                    <label style="width: 70px;">行先</label>
+                    <input type="text" id="reg-destination" style="width: 200px;"> 行
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label style="width: 70px;">車号</label>
+                <input type="text" id="reg-car-no" style="width: 100px;">
+            </div>
+
+            <div class="form-row" style="align-items: flex-start;">
+                <label style="width: 70px; padding-top: 4px;">取扱者</label>
+                <div style="display: flex; gap: 5px; flex-wrap: wrap; align-items: center;">
+                    <input type="text" id="reg-handler-code" placeholder="職員番号" style="width: 80px;" oninput="onStaffCodeManualInput(this.value)">
+                    <input type="text" id="reg-handler-title" placeholder="役職" style="width: 70px; background:#f0f0f0;" readonly>
+                    <input type="text" id="reg-handler-name" placeholder="氏名" style="width: 130px; background:#f0f0f0;" readonly>
+                    <button type="button" class="editable-field" style="background: #e7f1ff; font-weight: bold;" onclick="startBarcodeScanner()">バーコード読取</button>
+                </div>
+            </div>
+
+            <div class="form-row" style="align-items: flex-start;">
+                <label style="width: 70px; padding-top: 4px;">備考</label>
+                <textarea id="reg-remarks" rows="2" style="flex: 1; resize: none;"></textarea>
+            </div>
+
+            <div id="return-action-container" style="display: none; margin-top: 10px; border-top: 1px dashed #808080; padding-top: 10px; display: flex; gap: 10px;">
+                <button type="button" id="btn-return-action" style="background-color: #ffccbc; font-weight: bold; flex: 1; padding: 10px;" onclick="openReturnModal()">返却手続を行う</button>
+                <button type="button" id="btn-delete-action" style="background-color: #ffcdd2; font-weight: bold; width: 120px; padding: 10px;" onclick="openDeleteReasonModalFromEdit()">削除する</button>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 20px; gap: 10px;">
+                <button type="button" style="padding: 8px 20px;" onclick="closeRegisterScreen()">閉じる</button>
+                <button type="button" id="btn-save-action" style="padding: 8px 30px; font-weight: bold;" onclick="registerItem()">登 録</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. 現金・定期・クレジットカード情報画面 -->
+    <div id="screen-cash-detail" class="window">
+        <div class="title-bar">
+            <span>現金・定期・クレジットカード情報</span>
+            <div class="title-bar-close" onclick="closeCashDetailScreen()">×</div>
+        </div>
+        <div class="window-body" style="position: relative;">
+            <div style="font-weight: bold; margin-bottom: 5px;">現金</div>
+            <div id="section-cash" style="margin-bottom: 12px; padding-bottom: 10px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px;">
+                    <div>
+                        <div class="money-row">
+                            <span>10,000円札 ×</span>
+                            <input type="number" id="m-10000" value="0" oninput="calcTotalMoney()">
+                            <span>枚</span>
+                            <button type="button" onclick="adjustMoney('10000', -1)">◀</button>
+                            <button type="button" onclick="adjustMoney('10000', 1)">▶</button>
+                            <span>= <strong id="s-10000">0</strong> 円</span>
+                        </div>
+                        <div class="money-row">
+                            <span>5,000円札 ×</span>
+                            <input type="number" id="m-5000" value="0" oninput="calcTotalMoney()">
+                            <span>枚</span>
+                            <button type="button" onclick="adjustMoney('5000', -1)">◀</button>
+                            <button type="button" onclick="adjustMoney('5000', 1)">▶</button>
+                            <span>= <strong id="s-5000">0</strong> 円</span>
+                        </div>
+                        <div class="money-row">
+                            <span>2,000円札 ×</span>
+                            <input type="number" id="m-2000" value="0" oninput="calcTotalMoney()">
+                            <span>枚</span>
+                            <button type="button" onclick="adjustMoney('2000', -1)">◀</button>
+                            <button type="button" onclick="adjustMoney('2000', 1)">▶</button>
+                            <span>= <strong id="s-2000">0</strong> 円</span>
+                        </div>
+                        <div class="money-row">
+                            <span>1,000円札 ×</span>
+                            <input type="number" id="m-1000" value="0" oninput="calcTotalMoney()">
+                            <span>枚</span>
+                            <button type="button" onclick="adjustMoney('1000', -1)">◀</button>
+                            <button type="button" onclick="adjustMoney('1000', 1)">▶</button>
+                            <span>= <strong id="s-1000">0</strong> 円</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="money-row">
+                            <span>500円 ×</span>
+                            <input type="number" id="m-500" value="0" oninput="calcTotalMoney()">
+                            <span>枚</span>
+                            <button type="button" onclick="adjustMoney('500', -1)">◀</button>
+                            <button type="button" onclick="adjustMoney('500', 1)">▶</button>
+                            <span>= <strong id="s-500">0</strong> 円</span>
+                        </div>
+                        <div class="money-row">
+                            <span>100円 ×</span>
+                            <input type="number" id="m-100" value="0" oninput="calcTotalMoney()">
+                            <span>枚</span>
+                            <button type="button" onclick="adjustMoney('100', -1)">◀</button>
+                            <button type="button" onclick="adjustMoney('100', 1)">▶</button>
+                            <span>= <strong id="s-100">0</strong> 円</span>
+                        </div>
+                        <div class="money-row">
+                            <span>50円 ×</span>
+                            <input type="number" id="m-50" value="0" oninput="calcTotalMoney()">
+                            <span>枚</span>
+                            <button type="button" onclick="adjustMoney('50', -1)">◀</button>
+                            <button type="button" onclick="adjustMoney('50', 1)">▶</button>
+                            <span>= <strong id="s-50">0</strong> 円</span>
+                        </div>
+                        <div class="money-row">
+                            <span>10円 ×</span>
+                            <input type="number" id="m-10" value="0" oninput="calcTotalMoney()">
+                            <span>枚</span>
+                            <button type="button" onclick="adjustMoney('10', -1)">◀</button>
+                            <button type="button" onclick="adjustMoney('10', 1)">▶</button>
+                            <span>= <strong id="s-10">0</strong> 円</span>
+                        </div>
+                        <div class="money-row">
+                            <span>5円 ×</span>
+                            <input type="number" id="m-5" value="0" oninput="calcTotalMoney()">
+                            <span>枚</span>
+                            <button type="button" onclick="adjustMoney('5', -1)">◀</button>
+                            <button type="button" onclick="adjustMoney('5', 1)">▶</button>
+                            <span>= <strong id="s-5">0</strong> 円</span>
+                        </div>
+                        <div class="money-row">
+                            <span>1円 ×</span>
+                            <input type="number" id="m-1" value="0" oninput="calcTotalMoney()">
+                            <span>枚</span>
+                            <button type="button" onclick="adjustMoney('1', -1)">◀</button>
+                            <button type="button" onclick="adjustMoney('1', 1)">▶</button>
+                            <span>= <strong id="s-1">0</strong> 円</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-top: 10px;">
+                    <button type="button" style="padding: 2px 12px;" onclick="clearMoney()">クリア</button>
+                    <span>合計 <strong id="total-money-display" style="font-size: 16px;">0</strong> 円</span>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #808080; margin: 10px 0;">
+
+            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 10px; flex-wrap: wrap;">
+                <span style="font-weight: bold;">定期・クレジットカード等</span>
+                <label><input type="checkbox" id="chk-teiki" onclick="toggleTeikiFields()"> 定期</label>
+                <label><input type="checkbox" id="chk-credit" onclick="toggleCreditFields()"> クレジットカード</label>
+            </div>
+
+            <!-- 排他選択ボタン群 -->
+            <div style="display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap;">
+                <button type="button" id="btn-通勤" onclick="setTeikiType('通勤')">通勤</button>
+                <button type="button" id="btn-通学" onclick="setTeikiType('通学')">通学</button>
+                <button type="button" id="btn-1ヶ月" onclick="setTeikiTerm('1ヶ月', 1)">1ヶ月</button>
+                <button type="button" id="btn-3ヶ月" onclick="setTeikiTerm('3ヶ月', 3)">3ヶ月</button>
+                <button type="button" id="btn-6ヶ月" onclick="setTeikiTerm('6ヶ月', 6)">6ヶ月</button>
+                <button type="button" id="btn-1学期" onclick="setTeikiTerm('1学期', '1学期')">1学期</button>
+                <button type="button" id="btn-2学期" onclick="setTeikiTerm('2学期', '2学期')">2学期</button>
+                <button type="button" id="btn-3学期" onclick="setTeikiTerm('3学期', '3学期')">3学期</button>
+            </div>
+
+            <!-- 期間入力（自動フォーカス＆文字数制限対応） -->
+            <div class="form-row" style="font-size: 13px; margin-bottom: 8px; align-items: center;">
+                <label style="width: 50px;">期間</label>
+                <input type="text" id="t-p1" class="teiki-date-input" maxlength="4" style="width: 55px; text-align: center;" placeholder="YYYY"> 年 
+                <input type="text" id="t-p2" class="teiki-date-input" maxlength="2" style="width: 35px; text-align: center;" placeholder="MM"> 月 
+                <input type="text" id="t-p3" class="teiki-date-input" maxlength="2" style="width: 35px; text-align: center;" placeholder="DD"> 日 ～ 
+                <input type="text" id="t-p4" class="teiki-date-input" maxlength="4" style="width: 55px; text-align: center;" placeholder="YYYY"> 年 
+                <input type="text" id="t-p5" class="teiki-date-input" maxlength="2" style="width: 35px; text-align: center;" placeholder="MM"> 月 
+                <input type="text" id="t-p6" class="teiki-date-input" maxlength="2" style="width: 35px; text-align: center;" placeholder="DD"> 日
+            </div>
+
+            <!-- 画面テンキー -->
+            <div style="background: #dfdbc9; border: 2px solid; border-color: #808080 #fff #fff #808080; padding: 8px; width: fit-content; margin-bottom: 12px;">
+                <div style="font-size: 12px; font-weight: bold; margin-bottom: 4px; text-align: center;">画面テンキー</div>
+                <div style="display: grid; grid-template-columns: repeat(3, 40px); gap: 4px;">
+                    <button type="button" onclick="inputKey('7')">7</button>
+                    <button type="button" onclick="inputKey('8')">8</button>
+                    <button type="button" onclick="inputKey('9')">9</button>
+                    <button type="button" onclick="inputKey('4')">4</button>
+                    <button type="button" onclick="inputKey('5')">5</button>
+                    <button type="button" onclick="inputKey('6')">6</button>
+                    <button type="button" onclick="inputKey('1')">1</button>
+                    <button type="button" onclick="inputKey('2')">2</button>
+                    <button type="button" onclick="inputKey('3')">3</button>
+                    <button type="button" onclick="inputKey('0')">0</button>
+                    <button type="button" onclick="inputKey('00')">00</button>
+                    <button type="button" onclick="inputKey('BS')">←</button>
+                </div>
+            </div>
+
+            <div class="form-row" style="font-size: 13px; margin-bottom: 8px;">
+                <label style="width: 50px;">区間</label>
+                <input type="text" id="t-route-from" style="width: 170px;"> ～ <input type="text" id="t-route-to" style="width: 170px;">
+            </div>
+
+            <div class="form-row" style="font-size: 13px; margin-bottom: 8px;">
+                <label style="width: 50px;">氏名</label>
+                <input type="text" id="t-name" style="width: 180px;"> 様 
+                <input type="text" id="t-age" style="width: 50px; text-align: right;"> 歳
+            </div>
+
+            <div class="form-row" style="font-size: 13px; margin-bottom: 15px; align-items: flex-start;">
+                <label style="width: 50px; padding-top: 4px;">備考</label>
+                <textarea id="t-remarks" rows="3" style="flex: 1; resize: none;"></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                <button type="button" style="padding: 8px 30px; font-weight: bold;" onclick="saveDetailAndClose('cash')">確 定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. 車内詳細画面 -->
+    <div id="screen-car-detail" class="window">
+        <div class="title-bar">
+            <span>車内詳細</span>
+            <div class="title-bar-close" onclick="switchScreen('screen-sub-location-select')">×</div>
+        </div>
+        <div class="window-body">
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div>
+                    <div style="margin-bottom: 5px; font-weight: bold; font-size: 13px;">発・系統</div>
+                    <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px;">
+                        <button type="button" onclick="setCarDirection('西神中央')">西神中央</button>
+                        <button type="button" onclick="setCarDirection('名谷')">名谷</button>
+                        <button type="button" onclick="setCarDirection('新神戸(北)')">新神戸(北)</button>
+                        <button type="button" onclick="setCarDirection('新神戸(南)')">新神戸(南)</button>
+                        <button type="button" onclick="setCarDirection('谷上')">谷上</button>
+                        <button type="button" onclick="setCarDirection('')">クリア</button>
+                    </div>
+                    <input type="text" id="car-dir-input" style="width: 130px;" placeholder="直接入力も可">
+                </div>
+                <div>
+                    <div style="margin-bottom: 5px; font-weight: bold; font-size: 13px;">行先</div>
+                    <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px;">
+                        <button type="button" onclick="setCarDestination('西神中央')">西神中央</button>
+                        <button type="button" onclick="setCarDestination('名谷')">名谷</button>
+                        <button type="button" onclick="setCarDestination('新神戸(北)')">新神戸(北)</button>
+                        <button type="button" onclick="setCarDestination('新神戸(南)')">新神戸(南)</button>
+                        <button type="button" onclick="setCarDestination('谷上')">谷上</button>
+                        <button type="button" onclick="setCarDestination('')">クリア</button>
+                    </div>
+                    <input type="text" id="car-dest-input" style="width: 130px;" placeholder="直接入力も可">
+                </div>
+                <div>
+                    <div style="margin-bottom: 5px; font-weight: bold; font-size: 13px;">車号</div>
+                    <input type="text" id="car-no-input" style="width: 110px; margin-bottom: 8px;" readonly>
+                    <div style="display: grid; grid-template-columns: repeat(3, 36px); gap: 4px;">
+                        <button type="button" onclick="appendCarNo('1')">1</button>
+                        <button type="button" onclick="appendCarNo('2')">2</button>
+                        <button type="button" onclick="appendCarNo('3')">3</button>
+                        <button type="button" onclick="appendCarNo('4')">4</button>
+                        <button type="button" onclick="appendCarNo('5')">5</button>
+                        <button type="button" onclick="appendCarNo('6')">6</button>
+                        <button type="button" onclick="appendCarNo('7')">7</button>
+                        <button type="button" onclick="appendCarNo('8')">8</button>
+                        <button type="button" onclick="appendCarNo('9')">9</button>
+                        <button type="button" onclick="appendCarNo('0')">0</button>
+                        <button type="button" onclick="backCarNo()">←</button>
+                        <button type="button" onclick="clearCarNo()">C</button>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" style="font-weight: bold; padding: 8px 25px;" onclick="confirmCarDetail()">確 定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. 返却手続モーダル -->
+    <div id="screen-return-modal" class="window">
+        <div class="title-bar">
+            <span>返却手続入力</span>
+            <div class="title-bar-close" onclick="switchScreen('screen-register')">×</div>
+        </div>
+        <div class="window-body">
+            <div class="form-row">
+                <label style="width: 80px;">受取人氏名</label>
+                <input type="text" id="return-person-name" style="flex: 1; min-width: 200px;">
+            </div>
+            <div class="form-row">
+                <label style="width: 80px;">住所</label>
+                <input type="text" id="return-person-address" style="flex: 1; min-width: 200px;">
+            </div>
+            <div class="form-row" style="align-items: flex-start;">
+                <label style="width: 80px; padding-top: 4px;">サイン</label>
+                <div>
+                    <canvas id="sign-canvas" width="350" height="120" style="background: white; border: 2px solid #808080; cursor: crosshair; max-width: 100%;"></canvas>
+                    <div><button type="button" style="font-size: 12px; padding: 4px 8px; margin-top: 5px;" onclick="clearSignature()">サインクリア</button></div>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 20px; gap: 10px;">
+                <button type="button" style="padding: 8px 16px;" onclick="switchScreen('screen-register')">キャンセル</button>
+                <button type="button" style="font-weight: bold; background: #c8e6c9; padding: 8px 24px;" onclick="executeReturnProcess()">返却実行</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. 検索画面 -->
+    <div id="screen-search" class="window">
+        <div class="title-bar">
+            <span>検索</span>
+            <div class="title-bar-close" onclick="closeSearchScreen()">×</div>
+        </div>
+        <div class="window-body" style="display: flex; flex-direction: column; height: 100%; width: 100%; box-sizing: border-box; overflow-x: auto;">
+            <div style="display: flex; flex-wrap: wrap; gap: 30px; margin-bottom: 15px; font-size: 13px; align-items: flex-start; flex-shrink: 0;">
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="width: 75px; text-align: right;">駅・営業所</label>
+                        <input type="text" id="sch-station" style="width: 130px;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="width: 75px; text-align: right;">日付</label>
+                        <input type="text" id="sch-date" style="width: 130px;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="width: 75px; text-align: right;">時刻</label>
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            <input type="text" id="sch-time" style="width: 50px;"> 時台
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="width: 60px; text-align: right;">物品</label>
+                        <input type="text" id="sch-item" style="width: 130px;">
+                        <label style="width: 25px; text-align: right;">色</label>
+                        <input type="text" id="sch-color" style="width: 70px;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="width: 60px; text-align: right;">特徴</label>
+                        <input type="text" id="sch-feature" style="width: 235px;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="width: 60px; text-align: right;">発見場所</label>
+                        <input type="text" id="sch-found-loc" style="width: 140px;">
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="width: 55px; text-align: right;">発・系統</label>
+                        <input type="text" id="sch-direction" style="width: 90px;">
+                        <label style="width: 35px; text-align: right;">行先</label>
+                        <input type="text" id="sch-destination" style="width: 90px;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="width: 55px; text-align: right;">車号</label>
+                        <input type="text" id="sch-car" style="width: 90px;">
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; margin-top: 2px;">
+                        <button type="button" style="width: 110px; padding: 6px; font-weight: bold;" onclick="executeSearch()">検 索</button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: white; border: 2px solid; border-color: #808080 #fff #fff #808080; flex-grow: 1; overflow: auto; min-height: 200px; width: 100%; box-sizing: border-box;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; white-space: nowrap;">
+                    <thead>
+                        <tr style="background: #ece9d8; border-bottom: 1px solid #808080; position: sticky; top: 0; z-index: 10;">
+                            <th style="padding: 6px; border-right: 1px solid #ccc;">写真</th>
+                            <th style="padding: 6px; border-right: 1px solid #ccc;">更新日時 / 状態</th>
+                            <th style="padding: 6px; border-right: 1px solid #ccc;">No.</th>
+                            <th style="padding: 6px; border-right: 1px solid #ccc;">取扱場所</th>
+                            <th style="padding: 6px; border-right: 1px solid #ccc;">日付</th>
+                            <th style="padding: 6px; border-right: 1px solid #ccc;">時刻</th>
+                            <th style="padding: 6px; border-right: 1px solid #ccc;">品名</th>
+                            <th style="padding: 6px; border-right: 1px solid #ccc;">色</th>
+                            <th style="padding: 6px; border-right: 1px solid #ccc;">特徴</th>
+                            <th style="padding: 6px; border-right: 1px solid #ccc;">発見場所</th>
+                            <th style="padding: 6px; border-right: 1px solid #ccc;">発・系統</th>
+                            <th style="padding: 6px; border-right: 1px solid #ccc;">行</th>
+                            <th style="padding: 6px; border-right: 1px solid #ccc;">車号</th>
+                            <th style="padding: 6px;">備考</th>
+                        </tr>
+                    </thead>
+                    <tbody id="search-result-body">
+                        <tr><td colspan="14" style="padding: 15px; text-align: center; color: #666;">検索を行ってください</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. 設定画面 -->
+    <div id="screen-setting" class="window">
+        <div class="title-bar">
+            <span>設定</span>
+            <div class="title-bar-close" onclick="switchScreen('screen-menu')">×</div>
+        </div>
+        <div class="window-body" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+            <div>
+                <div class="form-row" style="margin: 10px 0;">
+                    <label style="font-size: 15px; width: 100px;">登録地点</label>
+                    <input type="text" id="setting-location-input" value="" placeholder="登録地点を設定してください。" style="flex: 1; font-size: 15px;" readonly>
+                    <button type="button" style="padding: 6px 14px;" onclick="switchScreen('screen-location-select')">選択</button>
+                </div>
+                
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">
+
+                <div class="form-row" style="margin: 10px 0; align-items: flex-start; flex-direction: column;">
+                    <div style="font-size: 15px; font-weight: bold; margin-bottom: 5px;">登録時CSV出力先フォルダ指定</div>
+                    <div style="font-size: 12px; color: #555; margin-bottom: 8px;">ブラウザのセキュリティ仕様上、フォルダを直接指定できない場合は「ブラウザの標準ダウンロード」を自動実行します。</div>
+                    <div style="display: flex; gap: 10px; width: 100%;">
+                        <input type="text" id="setting-folder-name" value="未選択（標準ダウンロード）" style="flex: 1;" readonly>
+                        <button type="button" onclick="selectExportFolder()">フォルダ選択</button>
+                    </div>
+                </div>
+
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">
+
+                <div style="margin: 10px 0;">
+                    <div style="font-size: 15px; font-weight: bold; margin-bottom: 5px;">職員データCSV参照</div>
+                    <div style="font-size: 12px; color: #555; margin-bottom: 8px;">形式: 職員番号, 氏名, 役職 (文字コードUTF-8推奨)</div>
+                    <input type="file" id="csv-file-input" accept=".csv" onchange="loadStaffCSV(event)" style="width: 100%;">
+                    <div id="csv-status" style="margin-top: 8px; font-size: 13px; color: #007600; font-weight: bold;"></div>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                <button type="button" style="padding: 8px 25px;" onclick="switchScreen('screen-menu')">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. 場所選択画面 -->
+    <div id="screen-location-select" class="window">
+        <div class="title-bar">
+            <span>登録地点選択</span>
+            <div class="title-bar-close" onclick="switchScreen('screen-setting')">×</div>
+        </div>
+        <div class="window-body">
+            <div class="grid-buttons-5" style="font-size: 13px;">
+                <button type="button" onclick="selectMainLocation('谷上')">谷上</button>
+                <button type="button" onclick="selectMainLocation('新神戸(北)')">新神戸(北)</button>
+                <button type="button" onclick="selectMainLocation('新神戸(南)')">新神戸(南)</button>
+                <button type="button" onclick="selectMainLocation('三宮(西)')">三宮(西)</button>
+                <button type="button" onclick="selectMainLocation('三宮(東)')">三宮(東)</button>
+                <button type="button" onclick="selectMainLocation('県庁前')">県庁前</button>
+                <button type="button" onclick="selectMainLocation('大倉山')">大倉山</button>
+                <button type="button" onclick="selectMainLocation('湊川公園')">湊川公園</button>
+                <button type="button" onclick="selectMainLocation('上沢')">上沢</button>
+                <button type="button" onclick="selectMainLocation('長田')">長田</button>
+                <button type="button" onclick="selectMainLocation('新長田 (山)')">新長田 (山)</button>
+                <button type="button" onclick="selectMainLocation('板宿(北)')">板宿(北)</button>
+                <button type="button" onclick="selectMainLocation('板宿(南)')">板宿(南)</button>
+                <button type="button" onclick="selectMainLocation('妙法寺')">妙法寺</button>
+                <button type="button" onclick="selectMainLocation('名谷')">名谷</button>
+                <button type="button" onclick="selectMainLocation('総合運動公園')">総合運動公園</button>
+                <button type="button" onclick="selectMainLocation('学園都市')">学園都市</button>
+                <button type="button" onclick="selectMainLocation('伊川谷')">伊川谷</button>
+                <button type="button" onclick="selectMainLocation('西神南')">西神南</button>
+                <button type="button" onclick="selectMainLocation('西神中央')">西神中央</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 9. 品名選択画面 -->
+    <div id="screen-item-select" class="window">
+        <div class="title-bar">
+            <span>品名選択</span>
+            <div class="title-bar-close" onclick="returnToRegisterFromSelect()">×</div>
+        </div>
+        <div class="window-body">
+            <div class="grid-buttons-4" style="font-size: 13px;">
+                <button type="button" onclick="selectItem('現金')">現金</button>
+                <button type="button" onclick="selectItem('財布')">財布</button>
+                <button type="button" onclick="selectItem('定期券')">定期券</button>
+                <button type="button" onclick="selectItem('カード類')">カード類</button>
+                <button type="button" onclick="selectItem('雨傘')">雨傘</button>
+                <button type="button" onclick="selectItem('日傘')">日傘</button>
+                <button type="button" onclick="selectItem('折り畳み傘')">折り畳み傘</button>
+                <button type="button" onclick="selectItem('カバン')">カバン</button>
+                <button type="button" onclick="selectItem('衣類')">衣類</button>
+                <button type="button" onclick="selectItem('帽子')">帽子</button>
+                <button type="button" onclick="selectItem('手袋')">手袋</button>
+                <button type="button" onclick="selectItem('マフラー')">マフラー</button>
+                <button type="button" onclick="selectItem('本・雑誌')">本・雑誌</button>
+                <button type="button" onclick="selectItem('眼鏡')">眼鏡</button>
+                <button type="button" onclick="selectItem('携帯電話')">携帯電話</button>
+                <button type="button" onclick="selectItem('鍵')">鍵</button>
+                <button type="button" onclick="selectItem('パスケース')">パスケース</button>
+                <button type="button" onclick="selectItem('その他')">その他</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 10. 色選択画面 -->
+    <div id="screen-color-select" class="window">
+        <div class="title-bar">
+            <span>色選択</span>
+            <div class="title-bar-close" onclick="returnToRegisterFromSelect()">×</div>
+        </div>
+        <div class="window-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; font-size: 13px;">
+                <button type="button" style="background-color: #000000; color: #ffffff;" onclick="selectColor('黒', '#000000')">黒</button>
+                <button type="button" style="background-color: #8B4513; color: #ffffff;" onclick="selectColor('茶', '#8B4513')">茶</button>
+                <button type="button" style="background-color: #000080; color: #ffffff;" onclick="selectColor('紺', '#000080')">紺</button>
+                <button type="button" style="background-color: #0000FF; color: #ffffff;" onclick="selectColor('青', '#0000FF')">青</button>
+                <button type="button" style="background-color: #00BFFF; color: #000000;" onclick="selectColor('水色', '#00BFFF')">水色</button>
+                <button type="button" style="background-color: #008000; color: #ffffff;" onclick="selectColor('緑', '#008000')">緑</button>
+                <button type="button" style="background-color: #FFFF00; color: #000000;" onclick="selectColor('黄', '#FFFF00')">黄</button>
+                <button type="button" style="background-color: #FF0000; color: #ffffff;" onclick="selectColor('赤', '#FF0000')">赤</button>
+                <button type="button" style="background-color: #FFC0CB; color: #000000;" onclick="selectColor('ピンク', '#FFC0CB')">ピンク</button>
+                <button type="button" style="background-color: #800080; color: #ffffff;" onclick="selectColor('紫', '#800080')">紫</button>
+                <button type="button" style="background-color: #FFFFFF; color: #000000; border: 1px solid #808080;" onclick="selectColor('白', '#FFFFFF')">白</button>
+                <button type="button" style="background-color: #E0E0E0; color: #000000;" onclick="selectColor('透明', 'transparent')">透明</button>
+                <button type="button" style="background-color: #808080; color: #ffffff;" onclick="selectColor('グレー', '#808080')">グレー</button>
+                <button type="button" style="background-color: #C0C0C0; color: #000000;" onclick="selectColor('シルバー', '#C0C0C0')">シルバー</button>
+                <button type="button" style="background-color: #FFD700; color: #000000;" onclick="selectColor('ゴールド', '#FFD700')">ゴールド</button>
+                <button type="button" style="background-color: #CCCCCC; color: #000000;" onclick="selectColor('その他', '#CCCCCC')">その他</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 11. 発見場所選択画面 -->
+    <div id="screen-sub-location-select" class="window">
+        <div class="title-bar">
+            <span>発見場所選択</span>
+            <div class="title-bar-close" onclick="returnToRegisterFromSelect()">×</div>
+        </div>
+        <div class="window-body">
+            <div id="sub-location-buttons" class="grid-buttons-3" style="font-size: 13px;"></div>
+        </div>
+    </div>
+
+    <script>
+        function showCustomAlert(message) {
+            document.getElementById('custom-alert-message').textContent = message;
+            document.getElementById('custom-alert-modal').style.display = 'flex';
+        }
+
+        function closeCustomAlert() {
+            document.getElementById('custom-alert-modal').style.display = 'none';
+        }
+
+        let itemsDB = JSON.parse(localStorage.getItem('lost_items_db')) || [];
+        let staffDB = JSON.parse(localStorage.getItem('staff_db_map')) || {
+            "101": { name: "管理者 太郎", title: "主任" },
+            "102": { name: "神戸 花子", title: "係員" }
+        };
+
+        let selectedDirectoryHandle = null;
+        const DB_NAME = "LostItemSystemDB";
+        const STORE_NAME = "handles";
+        
+        function openIDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME);
+                    }
+                };
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function saveDirectoryHandle(handle) {
+            const db = await openIDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, "readwrite");
+                const store = tx.objectStore(STORE_NAME);
+                store.put(handle, "exportDirectory");
+                tx.oncomplete = () => resolve();
+                tx.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function loadDirectoryHandle() {
+            const db = await openIDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, "readonly");
+                const store = tx.objectStore(STORE_NAME);
+                const request = store.get("exportDirectory");
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        function updateMenuWarning() {
+            const warningBanner = document.getElementById('menu-warning-banner');
+            if (!selectedDirectoryHandle) {
+                warningBanner.style.display = 'block';
+            } else {
+                warningBanner.style.display = 'none';
+            }
+        }
+
+        // 定期期間入力項目の自動フォーカス・入力制御の設定
+        let activeTeikiInput = null;
+        
+        window.addEventListener('DOMContentLoaded', async () => {
+            // ローカルストレージから登録地点を復元（デフォルトは「三宮(東)」）
+            let savedLocation = localStorage.getItem('registered_location');
+            if (!savedLocation) {
+                savedLocation = "三宮(東)";
+                localStorage.setItem('registered_location', savedLocation);
+            }
+            document.getElementById('main-current-location').value = savedLocation;
+            document.getElementById('setting-location-input').value = savedLocation;
+
+            const count = Object.keys(staffDB).length;
+            if (count > 0) {
+                document.getElementById('csv-status').textContent = `保存済みの職員データ（${count}件）が有効です。`;
+            }
+
+            try {
+                const savedHandle = await loadDirectoryHandle();
+                if (savedHandle) {
+                    if ((await savedHandle.queryPermission({ mode: 'readwrite' })) === 'granted') {
+                        selectedDirectoryHandle = savedHandle;
+                    } else if ((await savedHandle.requestPermission({ mode: 'readwrite' })) === 'granted') {
+                        selectedDirectoryHandle = savedHandle;
+                    }
+                }
+            } catch (err) {
+                console.warn("Folder handle restoration failed:", err);
+            }
+
+            const savedFolderName = localStorage.getItem('export_folder_name');
+            if (savedFolderName && selectedDirectoryHandle) {
+                document.getElementById('setting-folder-name').value = savedFolderName;
+            } else {
+                document.getElementById('setting-folder-name').value = "未選択（標準ダウンロード）";
+                selectedDirectoryHandle = null;
+            }
+
+            updateMenuWarning();
+
+            // 定期期間の各入力欄のフォーカス管理と自動送り
+            const teikiInputs = document.querySelectorAll('.teiki-date-input');
+            teikiInputs.forEach((input, index) => {
+                input.addEventListener('focus', () => {
+                    activeTeikiInput = input;
+                });
+                input.addEventListener('input', () => {
+                    const maxLen = parseInt(input.getAttribute('maxlength')) || 4;
+                    if (input.value.length >= maxLen) {
+                        if (index + 1 < teikiInputs.length) {
+                            teikiInputs[index + 1].focus();
+                        }
+                    }
+                });
+            });
+            if (teikiInputs.length > 0) {
+                activeTeikiInput = teikiInputs[0];
+            }
+        });
+
+        // 画面テンキーからの入力処理
+        function inputKey(val) {
+            if (!activeTeikiInput) return;
+            const maxLen = parseInt(activeTeikiInput.getAttribute('maxlength')) || 4;
+            const inputs = Array.from(document.querySelectorAll('.teiki-date-input'));
+            const currentIndex = inputs.indexOf(activeTeikiInput);
+
+            if (val === 'BS') {
+                if (activeTeikiInput.value.length > 0) {
+                    activeTeikiInput.value = activeTeikiInput.value.slice(0, -1);
+                } else if (currentIndex > 0) {
+                    activeTeikiInput = inputs[currentIndex - 1];
+                    activeTeikiInput.focus();
+                    activeTeikiInput.value = activeTeikiInput.value.slice(0, -1);
+                }
+            } else {
+                if (activeTeikiInput.value.length < maxLen) {
+                    activeTeikiInput.value += val;
+                    if (activeTeikiInput.value.length >= maxLen) {
+                        if (currentIndex + 1 < inputs.length) {
+                            inputs[currentIndex + 1].focus();
+                        }
+                    }
+                }
+            }
+        }
+
+        // 排他ボタンの選択状態管理
+        let selectedTeikiType = null;
+        let selectedTeikiTerm = null;
+
+        function setTeikiType(type) {
+            ['通勤', '通学'].forEach(t => {
+                const btn = document.getElementById(`btn-${t}`);
+                if (t === type) {
+                    if (selectedTeikiType === t) {
+                        btn.classList.remove('selected-btn');
+                        selectedTeikiType = null;
+                    } else {
+                        btn.classList.add('selected-btn');
+                        selectedTeikiType = t;
+                    }
+                } else {
+                    btn.classList.remove('selected-btn');
+                }
+            });
+        }
+
+        function setTeikiTerm(termName, months) {
+            ['1ヶ月', '3ヶ月', '6ヶ月', '1学期', '2学期', '3学期'].forEach(t => {
+                const btn = document.getElementById(`btn-${t}`);
+                if (t === termName) {
+                    if (selectedTeikiTerm === t) {
+                        btn.classList.remove('selected-btn');
+                        selectedTeikiTerm = null;
+                    } else {
+                        btn.classList.add('selected-btn');
+                        selectedTeikiTerm = t;
+                        calculateEndDate(months);
+                    }
+                } else {
+                    btn.classList.remove('selected-btn');
+                }
+            });
+        }
+
+        // 開始日に応じて終了年月日を自動計算する関数
+        function calculateEndDate(termVal) {
+            const y1 = parseInt(document.getElementById('t-p1').value);
+            const m1 = parseInt(document.getElementById('t-p2').value);
+            const d1 = parseInt(document.getElementById('t-p3').value);
+
+            if (isNaN(y1) || isNaN(m1) || isNaN(d1)) {
+                showCustomAlert('開始年月日（年・月・日）を先に正しく入力してください。');
+                return;
+            }
+
+            let startDate = new Date(y1, m1 - 1, d1);
+            let endDate = new Date(startDate);
+
+            if (typeof termVal === 'number') {
+                // 月数加算 (1, 3, 6ヶ月)
+                endDate.setMonth(endDate.getMonth() + termVal);
+                endDate.setDate(endDate.getDate() - 1); // 定期券の終期調整
+            } else if (termVal === '1学期' || termVal === '2学期' || termVal === '3学期') {
+                // 学期ごとの固定目安設定例
+                if (termVal === '1学期') {
+                    endDate = new Date(y1, 6, 20); // 7月20日頃
+                } else if (termVal === '2学期') {
+                    endDate = new Date(y1, 11, 25); // 12月25日頃
+                } else if (termVal === '3学期') {
+                    endDate = new Date(y1 + 1, 2, 31); // 3月31日頃
+                }
+            }
+
+            document.getElementById('t-p4').value = endDate.getFullYear();
+            document.getElementById('t-p5').value = String(endDate.getMonth() + 1).padStart(2, '0');
+            document.getElementById('t-p6').value = String(endDate.getDate()).padStart(2, '0');
+        }
+
+        async function selectExportFolder() {
+            if ('showDirectoryPicker' in window) {
+                try {
+                    selectedDirectoryHandle = await window.showDirectoryPicker();
+                    const folderName = selectedDirectoryHandle.name;
+                    document.getElementById('setting-folder-name').value = folderName;
+                    localStorage.setItem('export_folder_name', folderName);
+                    await saveDirectoryHandle(selectedDirectoryHandle);
+                    updateMenuWarning();
+                    showCustomAlert(`出力先フォルダ「${folderName}」を設定しました。`);
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        console.error(err);
+                        showCustomAlert('フォルダの選択に失敗しました。');
+                    }
+                }
+            } else {
+                showCustomAlert('お使いのブラウザはフォルダ直接指定に対応していません。');
+            }
+        }
+
+        let currentEditingId = null;
+        let searchIntervalTimer = null;
+
+        function switchScreen(screenId) {
+            document.querySelectorAll('.window').forEach(w => w.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId === 'screen-sub-location-select') {
+                renderSubLocationButtons();
+            }
+            if (screenId === 'screen-menu') {
+                updateMenuWarning();
+                stopSearchInterval();
+            }
+            if (screenId === 'screen-search') {
+                startSearchInterval();
+            } else {
+                stopSearchInterval();
+            }
+        }
+
+        function startSearchInterval() {
+            stopSearchInterval();
+            executeSearch();
+            searchIntervalTimer = setInterval(() => {
+                executeSearch();
+            }, 5000);
+        }
+
+        function stopSearchInterval() {
+            if (searchIntervalTimer) {
+                clearInterval(searchIntervalTimer);
+                searchIntervalTimer = null;
+            }
+        }
+
+        function closeSearchScreen() {
+            stopSearchInterval();
+            switchScreen('screen-menu');
+        }
+
+        function selectMainLocation(locName) {
+            document.getElementById('main-current-location').value = locName;
+            document.getElementById('setting-location-input').value = locName;
+            localStorage.setItem('registered_location', locName);
+            switchScreen('screen-setting');
+        }
+
+        function loadStaffCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split(/\r\n|\n/);
+                let newStaffMap = {};
+                let count = 0;
+                lines.forEach((line) => {
+                    if (!line.trim()) return;
+                    const cols = line.split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
+                    if (cols.length >= 3) {
+                        newStaffMap[cols[0]] = { name: cols[1], title: cols[2] };
+                        count++;
+                    }
+                });
+                if (count > 0) {
+                    staffDB = newStaffMap;
+                    localStorage.setItem('staff_db_map', JSON.stringify(staffDB));
+                    document.getElementById('csv-status').textContent = `${count}件の職員データを読み込みました。`;
+                } else {
+                    document.getElementById('csv-status').textContent = `データの読み込みに失敗しました。`;
+                }
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        function handleScannedStaffCode(code) {
+            code = code.trim();
+            document.getElementById('reg-handler-code').value = code;
+            if (staffDB[code]) {
+                document.getElementById('reg-handler-name').value = staffDB[code].name;
+                document.getElementById('reg-handler-title').value = staffDB[code].title;
+            } else {
+                document.getElementById('reg-handler-name').value = "未登録職員";
+                document.getElementById('reg-handler-title').value = "不明";
+            }
+        }
+
+        function onStaffCodeManualInput(code) {
+            if (staffDB[code]) {
+                document.getElementById('reg-handler-name').value = staffDB[code].name;
+                document.getElementById('reg-handler-title').value = staffDB[code].title;
+            } else if (!code) {
+                document.getElementById('reg-handler-name').value = "";
+                document.getElementById('reg-handler-title').value = "";
+            } else {
+                document.getElementById('reg-handler-name').value = "未登録職員";
+                document.getElementById('reg-handler-title').value = "不明";
+            }
+        }
+
+        let html5QrCode = null;
+        function startBarcodeScanner() {
+            const modal = document.getElementById('barcode-modal');
+            modal.style.display = 'flex';
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode("reader");
+            }
+            const qrCodeSuccessCallback = (decodedText) => {
+                closeBarcodeScanner();
+                handleScannedStaffCode(decodedText);
+            };
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback).catch(() => {
+                html5QrCode.start({ facingMode: "user" }, config, qrCodeSuccessCallback).catch(() => {
+                    showCustomAlert("カメラ起動に失敗しました。");
+                    closeBarcodeScanner();
+                });
+            });
+        }
+        function closeBarcodeScanner() {
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('barcode-modal').style.display = 'none';
+                }).catch(() => {
+                    document.getElementById('barcode-modal').style.display = 'none';
+                });
+            } else {
+                document.getElementById('barcode-modal').style.display = 'none';
+            }
+        }
+
+        let mediaStream = null;
+        function startCameraModal() {
+            const modal = document.getElementById('camera-modal');
+            modal.style.display = 'flex';
+            const video = document.getElementById('camera-video');
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
+                .then(stream => { mediaStream = stream; video.srcObject = stream; })
+                .catch(() => {
+                    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+                        .then(stream => { mediaStream = stream; video.srcObject = stream; })
+                        .catch(() => {
+                            showCustomAlert("カメラを起動できませんでした。");
+                            closeCameraModal();
+                        });
+                });
+        }
+        function capturePhoto() {
+            const video = document.getElementById('camera-video');
+            const canvas = document.getElementById('camera-canvas');
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            
+            const img = document.getElementById('photo-preview');
+            img.src = dataUrl;
+            img.style.display = 'block';
+            document.getElementById('photo-placeholder').style.display = 'none';
+            document.getElementById('btn-delete-photo').style.display = 'block';
+            closeCameraModal();
+        }
+        function closeCameraModal() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(t => t.stop());
+                mediaStream = null;
+            }
+            document.getElementById('camera-modal').style.display = 'none';
+        }
+
+        function handleImageFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById('photo-preview');
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                    document.getElementById('photo-placeholder').style.display = 'none';
+                    document.getElementById('btn-delete-photo').style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function deletePhoto() {
+            const img = document.getElementById('photo-preview');
+            img.src = '';
+            img.style.display = 'none';
+            document.getElementById('photo-placeholder').style.display = 'block';
+            document.getElementById('btn-delete-photo').style.display = 'none';
+            document.getElementById('file-input').value = '';
+        }
+
+        function openFullscreenPhoto(src) {
+            if (!src) return;
+            document.getElementById('fullscreen-img').src = src;
+            document.getElementById('fullscreen-photo-overlay').style.display = 'flex';
+        }
+        function openFullscreenPhotoFromReg() {
+            const src = document.getElementById('photo-preview').src;
+            if (document.getElementById('photo-preview').style.display !== 'none') {
+                openFullscreenPhoto(src);
+            }
+        }
+        function closeFullscreenPhoto() {
+            document.getElementById('fullscreen-photo-overlay').style.display = 'none';
+        }
+
+        function openDeleteReasonModalFromEdit() {
+            if (!currentEditingId) return;
+            document.querySelector('input[name="del-reason"][value="廃棄処分"]').checked = true;
+            document.getElementById('del-other-text').value = '';
+            document.getElementById('del-other-container').style.display = 'none';
+            document.getElementById('delete-reason-modal').style.display = 'flex';
+        }
+
+        function closeDeleteReasonModal() {
+            document.getElementById('delete-reason-modal').style.display = 'none';
+        }
+
+        function toggleOtherReasonInput(show) {
+            document.getElementById('del-other-container').style.display = show ? 'block' : 'none';
+        }
+
+        function confirmExecuteDelete() {
+            const selectedRadio = document.querySelector('input[name="del-reason"]:checked');
+            let reason = selectedRadio ? selectedRadio.value : '廃棄処分';
+
+            if (reason === 'その他') {
+                const otherVal = document.getElementById('del-other-text').value.trim();
+                if (!otherVal) {
+                    showCustomAlert('「その他」の理由を入力してください。');
+                    return;
+                }
+                reason = `その他:${otherVal}`;
+            }
+
+            if (currentEditingId) {
+                itemsDB = itemsDB.map(i => {
+                    if (i.id === currentEditingId) {
+                        i.status = `削除（${reason}）`;
+                        i.updateTime = new Date().toLocaleString();
+                        i.photo = "";
+                    }
+                    return i;
+                });
+                localStorage.setItem('lost_items_db', JSON.stringify(itemsDB));
+                exportAndSaveCSV();
+                showCustomAlert(`項目を削除しました。`);
+                closeDeleteReasonModal();
+                switchScreen('screen-search');
+                executeSearch();
+            }
+        }
+
+        function openRegisterScreen() {
+            currentEditingId = null;
+            document.getElementById('reg-window-title').textContent = "遺留品登録";
+            document.getElementById('btn-save-action').textContent = "登 録";
+            document.getElementById('btn-save-action').style.display = 'inline-block';
+            document.getElementById('return-action-container').style.display = 'none';
+            document.getElementById('edit-location-warning').style.display = 'none';
+            setEditableFieldsEnabled(true);
+
+            let curLoc = document.getElementById('main-current-location').value;
+            if (!curLoc) {
+                curLoc = "三宮(東)";
+            }
+            document.getElementById('reg-location-header').value = curLoc;
+
+            const now = new Date();
+            document.getElementById('reg-year').value = now.getFullYear();
+            document.getElementById('reg-month').value = now.getMonth() + 1;
+            document.getElementById('reg-day').value = now.getDate();
+            document.getElementById('reg-hour').value = now.getHours();
+            document.getElementById('reg-minute').value = String(now.getMinutes()).padStart(2, '0');
+
+            document.getElementById('reg-itemname').value = '';
+            document.getElementById('reg-color-text').textContent = '無選択';
+            document.getElementById('reg-color-box').style.backgroundColor = 'transparent';
+            document.getElementById('reg-feature').value = '';
+            document.getElementById('reg-found-location').value = '';
+            document.getElementById('reg-direction').value = '';
+            document.getElementById('reg-destination').value = '';
+            document.getElementById('reg-car-no').value = '';
+            document.getElementById('reg-handler-code').value = '';
+            document.getElementById('reg-handler-title').value = '';
+            document.getElementById('reg-handler-name').value = '';
+            document.getElementById('reg-remarks').value = '';
+            
+            deletePhoto();
+            document.getElementById('reg-serial-no').value = itemsDB.length + 1;
+
+            switchScreen('screen-register');
+        }
+
+        function closeRegisterScreen() { switchScreen('screen-menu'); }
+
+        let returnTargetScreen = 'screen-register';
+        function openSelectFromReg(screenId) {
+            returnTargetScreen = 'screen-register';
+            switchScreen(screenId);
+        }
+        function returnToRegisterFromSelect() { switchScreen(returnTargetScreen); }
+
+        function selectItem(name) {
+            document.getElementById('reg-itemname').value = name;
+            switchScreen('screen-register');
+            openDirectDetailScreen(name);
+        }
+
+        function openDirectDetailScreen(itemName) {
+            if (['現金', '財布', '定期券', 'カード類', 'パスケース'].includes(itemName)) {
+                clearMoney();
+                document.getElementById('chk-teiki').checked = false;
+                document.getElementById('chk-credit').checked = false;
+                document.getElementById('t-p1').value = '';
+                document.getElementById('t-p2').value = '';
+                document.getElementById('t-p3').value = '';
+                document.getElementById('t-p4').value = '';
+                document.getElementById('t-p5').value = '';
+                document.getElementById('t-p6').value = '';
+                document.getElementById('t-route-from').value = '';
+                document.getElementById('t-route-to').value = '';
+                document.getElementById('t-name').value = '';
+                document.getElementById('t-age').value = '';
+                document.getElementById('t-remarks').value = '';
+                switchScreen('screen-cash-detail');
+            }
+        }
+
+        function selectColor(colorName, hexCode) {
+            document.getElementById('reg-color-text').textContent = colorName;
+            document.getElementById('reg-color-box').style.backgroundColor = hexCode;
+            switchScreen('screen-register');
+        }
+
+        function renderSubLocationButtons() {
+            const container = document.getElementById('sub-location-buttons');
+            const curLoc = document.getElementById('reg-location-header').value;
+            
+            let html = `
+                <button type="button" onclick="selectSubLocation('柵内コンコース')">柵内コンコース</button>
+                <button type="button" onclick="selectSubLocation('柵外コンコース')">柵外コンコース</button>
+                <button type="button" onclick="selectSubLocation('男子トイレ')">男子トイレ</button>
+                <button type="button" onclick="selectSubLocation('女子トイレ')">女子トイレ</button>
+                <button type="button" onclick="selectSubLocation('車内')">車内</button>
+                <button type="button" onclick="selectSubLocation('1番線ホーム')">1番線ホーム</button>
+                <button type="button" onclick="selectSubLocation('2番線ホーム')">2番線ホーム</button>
+            `;
+
+            if (curLoc === '西神中央' || curLoc === '名谷') {
+                html += `<button type="button" onclick="selectSubLocation('3番線ホーム')">3番線ホーム</button>`;
+            }
+            if (curLoc === '名谷') {
+                html += `<button type="button" onclick="selectSubLocation('4番線ホーム')">4番線ホーム</button>`;
+            }
+            if (curLoc === '谷上') {
+                html += `<button type="button" onclick="selectSubLocation('ホーム')">ホーム</button>`;
+            }
+            html += `<button type="button" onclick="selectSubLocation('その他')">その他</button>`;
+            container.innerHTML = html;
+        }
+
+        function selectSubLocation(subLoc) {
+            if (subLoc === 'その他') {
+                const customLoc = prompt('その他の発見場所を入力してください：');
+                if (customLoc !== null && customLoc.trim() !== '') {
+                    document.getElementById('reg-found-location').value = customLoc.trim();
+                    switchScreen('screen-register');
+                }
+            } else {
+                document.getElementById('reg-found-location').value = subLoc;
+                checkFoundLocationChange(subLoc);
+            }
+        }
+
+        function checkFoundLocationChange(val) {
+            if (val === '車内') {
+                switchScreen('screen-car-detail');
+            } else {
+                switchScreen('screen-register');
+            }
+        }
+
+        function closeCashDetailScreen() { switchScreen('screen-register'); }
+
+        function adjustMoney(denom, delta) {
+            const input = document.getElementById(`m-${denom}`);
+            let val = parseInt(input.value) || 0;
+            val = Math.max(0, val + delta);
+            input.value = val;
+            calcTotalMoney();
+        }
+
+        function calcTotalMoney() {
+            let total = 0;
+            const denoms = [10000, 5000, 2000, 1000, 500, 100, 50, 10, 5, 1];
+            denoms.forEach(d => {
+                const count = parseInt(document.getElementById(`m-${d}`).value) || 0;
+                const sub = count * d;
+                document.getElementById(`s-${d}`).textContent = sub.toLocaleString();
+                total += sub;
+            });
+            document.getElementById('total-money-display').textContent = total.toLocaleString();
+        }
+
+        function clearMoney() {
+            const denoms = [10000, 5000, 2000, 1000, 500, 100, 50, 10, 5, 1];
+            denoms.forEach(d => { document.getElementById(`m-${d}`).value = 0; });
+            calcTotalMoney();
+        }
+
+        function toggleTeikiFields() {}
+        function toggleCreditFields() {}
+
+        function saveDetailAndClose() {
+            let textParts = [];
+            
+            let details = [];
+            const denoms = [10000, 5000, 2000, 1000, 500, 100, 50, 10, 5, 1];
+            denoms.forEach(d => {
+                const cnt = parseInt(document.getElementById(`m-${d}`).value) || 0;
+                if (cnt > 0) details.push(`${d}円×${cnt}枚`);
+            });
+            const total = document.getElementById('total-money-display').textContent;
+            if (details.length > 0 || total !== "0") {
+                textParts.push(`【現金内訳】\n${details.join(', ')}\n合計: ${total}円`);
+            }
+
+            const isTeiki = document.getElementById('chk-teiki').checked;
+            const isCredit = document.getElementById('chk-credit').checked;
+            if(isTeiki || isCredit) {
+                let types = [];
+                if(isTeiki) types.push("定期");
+                if(isCredit) types.push("クレジットカード");
+                if(selectedTeikiType) types.push(`(${selectedTeikiType})`);
+                if(selectedTeikiTerm) types.push(`[${selectedTeikiTerm}]`);
+                
+                const p1 = document.getElementById('t-p1').value;
+                const p2 = document.getElementById('t-p2').value;
+                const p3 = document.getElementById('t-p3').value;
+                const p4 = document.getElementById('t-p4').value;
+                const p5 = document.getElementById('t-p5').value;
+                const p6 = document.getElementById('t-p6').value;
+                const rFrom = document.getElementById('t-route-from').value;
+                const rTo = document.getElementById('t-route-to').value;
+                const name = document.getElementById('t-name').value;
+                const age = document.getElementById('t-age').value;
+                const rem = document.getElementById('t-remarks').value;
+
+                let subInfo = `【${types.join('・')}情報】`;
+                if(p1 || p4) subInfo += `\n期間: ${p1}.${p2}.${p3} ～ ${p4}.${p5}.${p6}`;
+                if(rFrom || rTo) subInfo += `\n区間: ${rFrom} ～ ${rTo}`;
+                if(name) subInfo += `\n氏名: ${name} 様 (${age ? age + '歳' : '年齢不明'})`;
+                if(rem) subInfo += `\n備考: ${rem}`;
+                textParts.push(subInfo);
+            }
+
+            if (textParts.length > 0) {
+                document.getElementById('reg-feature').value = textParts.join('\n\n');
+            }
+
+            switchScreen('screen-register');
+        }
+
+        function setCarDirection(val) { document.getElementById('car-dir-input').value = val; }
+        function setCarDestination(val) { document.getElementById('car-dest-input').value = val; }
+        function appendCarNo(val) {
+            const input = document.getElementById('car-no-input');
+            if (input.value.length < 4) input.value += val;
+        }
+        function backCarNo() {
+            const input = document.getElementById('car-no-input');
+            input.value = input.value.slice(0, -1);
+        }
+        function clearCarNo() { document.getElementById('car-no-input').value = ''; }
+        function confirmCarDetail() {
+            document.getElementById('reg-direction').value = document.getElementById('car-dir-input').value;
+            document.getElementById('reg-destination').value = document.getElementById('car-dest-input').value;
+            document.getElementById('reg-car-no').value = document.getElementById('car-no-input').value;
+            switchScreen('screen-register');
+        }
+
+        async function exportAndSaveCSV() {
+            const yearStr = document.getElementById('reg-year').value;
+            const monthVal = parseInt(document.getElementById('reg-month').value, 10);
+            const locationName = document.getElementById('reg-location-header').value;
+
+            let fiscalYear = parseInt(yearStr, 10);
+            if (monthVal >= 1 && monthVal <= 3) {
+                fiscalYear -= 1;
+            }
+            const baseFileName = `${locationName}_${yearStr}${String(monthVal).padStart(2, '0')}${String(document.getElementById('reg-day').value).padStart(2, '0')}`;
+            const csvFileName = `${fiscalYear}年度_${locationName}.csv`;
+
+            let csvContent = "\uFEFF" + "No,状態,取扱場所,日付,時刻,品名,色,特徴,発見場所,発・系統,行先,車号,備考,画像ファイル名\n";
+            itemsDB.forEach(i => {
+                let imgFileName = i.photo ? `${baseFileName}.jpg` : "";
+                csvContent += `"${i.serialNo}","${i.status}","${i.station}","${i.date}","${i.time}","${i.itemName}","${i.color}","${(i.feature || '').replace(/\n/g, ' ')}","${i.foundLoc}","${i.direction || ''}","${i.destination || ''}","${i.carNo || ''}","${i.remarks || ''}","${imgFileName}"\n`;
+            });
+
+            if (selectedDirectoryHandle) {
+                try {
+                    if ((await selectedDirectoryHandle.queryPermission({ mode: 'readwrite' })) !== 'granted') {
+                        if ((await selectedDirectoryHandle.requestPermission({ mode: 'readwrite' })) !== 'granted') {
+                            throw new Error("Permission denied");
+                        }
+                    }
+                    const fileHandle = await selectedDirectoryHandle.getFileHandle(csvFileName, { create: true });
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(csvContent);
+                    await writable.close();
+
+                    const currentPhoto = document.getElementById('photo-preview').src;
+                    if (currentPhoto && currentPhoto.startsWith('data:image')) {
+                        const imgFileHandle = await selectedDirectoryHandle.getFileHandle(`${baseFileName}.jpg`, { create: true });
+                        const imgWritable = await imgFileHandle.createWritable();
+                        const res = await fetch(currentPhoto);
+                        const blob = await res.blob();
+                        await imgWritable.write(blob);
+                        await imgWritable.close();
+                    }
+                    return;
+                } catch (err) {
+                    console.warn("Directory handle write failed:", err);
+                }
+            }
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = csvFileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function registerItem() {
+            const handlerCode = document.getElementById('reg-handler-code').value.trim();
+            if (!handlerCode) {
+                showCustomAlert('取扱者を入力してください');
+                return;
+            }
+
+            const itemData = {
+                id: currentEditingId || Date.now(),
+                updateTime: new Date().toLocaleString(),
+                status: "保管中",
+                serialNo: document.getElementById('reg-serial-no').value,
+                station: document.getElementById('reg-location-header').value,
+                date: `${document.getElementById('reg-year').value}/${document.getElementById('reg-month').value}/${document.getElementById('reg-day').value}`,
+                time: `${document.getElementById('reg-hour').value}:${document.getElementById('reg-minute').value}`,
+                itemName: document.getElementById('reg-itemname').value,
+                color: document.getElementById('reg-color-text').textContent,
+                feature: document.getElementById('reg-feature').value,
+                foundLoc: document.getElementById('reg-found-location').value,
+                direction: document.getElementById('reg-direction').value,
+                destination: document.getElementById('reg-destination').value,
+                carNo: document.getElementById('reg-car-no').value,
+                remarks: document.getElementById('reg-remarks').value,
+                photo: document.getElementById('photo-preview').src
+            };
+
+            if (currentEditingId) {
+                itemsDB = itemsDB.map(i => i.id === currentEditingId ? itemData : i);
+            } else {
+                itemsDB.push(itemData);
+            }
+
+            localStorage.setItem('lost_items_db', JSON.stringify(itemsDB));
+            exportAndSaveCSV();
+
+            showCustomAlert('登録およびファイル出力が完了しました。');
+            switchScreen('screen-menu');
+        }
+
+        function isTransferred(itemDateStr, itemTimeStr) {
+            try {
+                const [y, m, d] = itemDateStr.split('/').map(Number);
+                const [hh, mm] = itemTimeStr.split(':').map(Number);
+                const transferDate = new Date(y, m - 1, d, 10, 0);
+                if (hh >= 10) {
+                    transferDate.setDate(transferDate.getDate() + 1);
+                }
+                return new Date() >= transferDate;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function executeSearch() {
+            const tbody = document.getElementById('search-result-body');
+            tbody.innerHTML = '';
+            
+            const st = document.getElementById('sch-station').value.trim();
+            const itm = document.getElementById('sch-item').value.trim();
+            const color = document.getElementById('sch-color').value.trim();
+            const feature = document.getElementById('sch-feature').value.trim();
+            const foundLoc = document.getElementById('sch-found-loc').value.trim();
+            const direction = document.getElementById('sch-direction').value.trim();
+            const destination = document.getElementById('sch-destination').value.trim();
+            const carNo = document.getElementById('sch-car').value.trim();
+
+            const filtered = itemsDB.filter(item => {
+                if (item.status && item.status.startsWith('削除')) return false;
+                if (st && !item.station.includes(st)) return false;
+                if (itm && !item.itemName.includes(itm)) return false;
+                if (color && !item.color.includes(color)) return false;
+                if (feature && !item.feature.includes(feature)) return false;
+                if (foundLoc && !item.foundLoc.includes(foundLoc)) return false;
+                if (direction && !item.direction.includes(direction)) return false;
+                if (destination && !item.destination.includes(destination)) return false;
+                if (carNo && !item.carNo.includes(carNo)) return false;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="14" style="padding: 15px; text-align: center; color: #666;">該当するデータはありません</td></tr>';
+                return;
+            }
+
+            filtered.forEach(item => {
+                const transferred = isTransferred(item.date, item.time);
+                const rowBg = transferred ? 'background-color: #d3d3d3;' : '';
+
+                const tr = document.createElement('tr');
+                tr.style.cssText = `${rowBg} cursor: pointer;`;
+
+                const photoThumb = item.photo ? `<img src="${item.photo}" style="width: 32px; height: 24px; object-fit: cover; vertical-align: middle; border: 1px solid #808080;" title="クリックで全画面表示" onclick="event.stopPropagation(); openFullscreenPhoto('${item.photo}')">` : '<span style="color:#888; font-size:10px;">なし</span>';
+
+                tr.innerHTML = `
+                    <td style="padding: 6px; border-right: 1px solid #ccc; text-align: center;">${photoThumb}</td>
+                    <td style="padding: 6px; border-right: 1px solid #ccc;">${item.updateTime} (${item.status})</td>
+                    <td style="padding: 6px; border-right: 1px solid #ccc;">${item.serialNo}</td>
+                    <td style="padding: 6px; border-right: 1px solid #ccc;">${item.station}</td>
+                    <td style="padding: 6px; border-right: 1px solid #ccc;">${item.date}</td>
+                    <td style="padding: 6px; border-right: 1px solid #ccc;">${item.time}</td>
+                    <td style="padding: 6px; border-right: 1px solid #ccc;">${item.itemName}</td>
+                    <td style="padding: 6px; border-right: 1px solid #ccc;">${item.color}</td>
+                    <td style="padding: 6px; border-right: 1px solid #ccc; white-space: pre-wrap;">${item.feature}</td>
+                    <td style="padding: 6px; border-right: 1px solid #ccc;">${item.foundLoc}</td>
+                    <td style="padding: 6px; border-right: 1px solid #ccc;">${item.direction}</td>
+                    <td style="padding: 6px; border-right: 1px solid #ccc;">${item.destination}</td>
+                    <td style="padding: 6px; border-right: 1px solid #ccc;">${item.carNo}</td>
+                    <td style="padding: 6px;">${item.remarks}</td>
+                `;
+                tr.ondblclick = () => openEditScreen(item);
+                tbody.appendChild(tr);
+            });
+        }
+
+        function setEditableFieldsEnabled(enabled) {
+            const selector = '.editable-field, input:not(#reg-serial-no, #reg-location-header, #reg-year, #reg-month, #reg-day, #reg-hour, #reg-minute), textarea';
+            document.querySelectorAll(selector).forEach(el => {
+                if (!enabled) {
+                    el.setAttribute('disabled', 'true');
+                    el.style.backgroundColor = '#f5f5f5';
+                } else {
+                    el.removeAttribute('disabled');
+                    el.style.backgroundColor = '#ffffff';
+                }
+            });
+        }
+
+        function openEditScreen(item) {
+            currentEditingId = item.id;
+            document.getElementById('reg-window-title').textContent = "遺留品詳細・編集";
+
+            let currentLocation = document.getElementById('main-current-location').value;
+            if (!currentLocation) {
+                currentLocation = "三宮(東)";
+            }
+            const isSameLocation = (item.station === currentLocation);
+
+            const warningBanner = document.getElementById('edit-location-warning');
+            const returnContainer = document.getElementById('return-action-container');
+            const saveBtn = document.getElementById('btn-save-action');
+
+            if (isSameLocation) {
+                warningBanner.style.display = 'none';
+                returnContainer.style.display = 'flex';
+                saveBtn.style.display = 'inline-block';
+                saveBtn.textContent = "更 新";
+                setEditableFieldsEnabled(true);
+            } else {
+                document.getElementById('warning-current-loc').textContent = currentLocation;
+                document.getElementById('warning-reg-loc').textContent = item.station;
+                warningBanner.style.display = 'block';
+                returnContainer.style.display = 'none';
+                saveBtn.style.display = 'none';
+                setEditableFieldsEnabled(false);
+            }
+
+            document.getElementById('reg-location-header').value = item.station;
+            document.getElementById('reg-serial-no').value = item.serialNo;
+
+            const dateParts = item.date.split('/');
+            if(dateParts.length === 3) {
+                document.getElementById('reg-year').value = dateParts[0];
+                document.getElementById('reg-month').value = dateParts[1];
+                document.getElementById('reg-day').value = dateParts[2];
+            }
+            const timeParts = item.time.split(':');
+            if(timeParts.length === 2) {
+                document.getElementById('reg-hour').value = timeParts[0];
+                document.getElementById('reg-minute').value = timeParts[1];
+            }
+
+            document.getElementById('reg-itemname').value = item.itemName;
+            document.getElementById('reg-color-text').textContent = item.color;
+            document.getElementById('reg-feature').value = item.feature;
+            document.getElementById('reg-found-location').value = item.foundLoc;
+            document.getElementById('reg-direction').value = item.direction;
+            document.getElementById('reg-destination').value = item.destination;
+            document.getElementById('reg-car-no').value = item.carNo;
+            document.getElementById('reg-remarks').value = item.remarks;
+
+            if (item.photo) {
+                const img = document.getElementById('photo-preview');
+                img.src = item.photo;
+                img.style.display = 'block';
+                document.getElementById('photo-placeholder').style.display = 'none';
+                document.getElementById('btn-delete-photo').style.display = isSameLocation ? 'block' : 'none';
+            } else {
+                deletePhoto();
+            }
+
+            switchScreen('screen-register');
+        }
+
+        function openReturnModal() {
+            switchScreen('screen-return-modal');
+            initCanvas();
+        }
+
+        let canvas, ctx, painting = false;
+        function initCanvas() {
+            canvas = document.getElementById('sign-canvas');
+            ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#000';
+
+            canvas.onmousedown = startDraw;
+            canvas.onmousemove = draw;
+            canvas.onmouseup = stopDraw;
+            canvas.onmouseleave = stopDraw;
+
+            canvas.ontouchstart = (e) => { startDraw(e.touches[0]); e.preventDefault(); };
+            canvas.ontouchmove = (e) => { draw(e.touches[0]); e.preventDefault(); };
+            canvas.ontouchend = stopDraw;
+        }
+        function startDraw(e) {
+            const rect = canvas.getBoundingClientRect();
+            painting = true;
+            ctx.beginPath();
+            ctx.moveTo((e.clientX || e.pageX) - rect.left, (e.clientY || e.pageY) - rect.top);
+        }
+        function draw(e) {
+            if (!painting) return;
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo((e.clientX || e.pageX) - rect.left, (e.clientY || e.pageY) - rect.top);
+            ctx.stroke();
+        }
+        function stopDraw() { painting = false; }
+        function clearSignature() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+        function executeReturnProcess() {
+            if (currentEditingId) {
+                itemsDB = itemsDB.map(i => {
+                    if (i.id === currentEditingId) {
+                        i.status = "返却済";
+                        i.updateTime = new Date().toLocaleString();
+                    }
+                    return i;
+                });
+                localStorage.setItem('lost_items_db', JSON.stringify(itemsDB));
+                showCustomAlert('返却手続が完了しました。');
+                switchScreen('screen-menu');
+            }
+        }
+    </script>
+</body>
+</html>
